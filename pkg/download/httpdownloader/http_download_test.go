@@ -1,4 +1,4 @@
-package download
+package httpdownloader
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func TestDownloader_Download1024ByteFile(t *testing.T) {
-	d := NewDownloader(time.Second*5, 4*1024*1024)
+func TestHTTPDownloader_Download1024ByteFile(t *testing.T) {
+	d := NewHTTPDownloader(time.Second*5, 4*1024*1024)
 	ctx := context.Background()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -38,8 +38,8 @@ func TestDownloader_Download1024ByteFile(t *testing.T) {
 	}
 }
 
-func TestDownloader_InvalidUrl(t *testing.T) {
-	d := NewDownloader(time.Second*5, 512)
+func TestHTTPDownloader_InvalidUrl(t *testing.T) {
+	d := NewHTTPDownloader(time.Second*5, 512)
 	ctx := context.Background()
 
 	_, err := d.Download(ctx, "")
@@ -49,8 +49,8 @@ func TestDownloader_InvalidUrl(t *testing.T) {
 	}
 }
 
-func TestDownloader_Non200StatusCode(t *testing.T) {
-	d := NewDownloader(time.Second*5, 4*1024*1024)
+func TestHTTPDownloader_Non200StatusCode(t *testing.T) {
+	d := NewHTTPDownloader(time.Second*5, 4*1024*1024)
 	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(404)
@@ -65,8 +65,8 @@ func TestDownloader_Non200StatusCode(t *testing.T) {
 	}
 }
 
-func TestDownloader_FileTooBig(t *testing.T) {
-	d := NewDownloader(time.Second*5, 512)
+func TestHTTPDownloader_FileTooBig(t *testing.T) {
+	d := NewHTTPDownloader(time.Second*5, 512)
 	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Content-Length", "1024")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/bokan/stream/pkg/download"
 	"github.com/bokan/stream/pkg/facedetect"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -17,14 +18,21 @@ type API struct {
 	fd   facedetect.FaceDetector
 }
 
-func NewAPI(addr string, downloader download.Downloader, fd facedetect.FaceDetector) *API {
-	return &API{addr: addr, d: downloader, fd: fd}
+func NewAPI(addr string, d download.Downloader, fd facedetect.FaceDetector) *API {
+	return &API{addr: addr, d: d, fd: fd}
 }
 
 func (a *API) Routes() http.Handler {
 	r := mux.NewRouter()
 	r.Methods(http.MethodGet).Path("/v1/face-detect").HandlerFunc(a.handleFaceDetect)
-	return r
+
+	allowAllOrigins := handlers.AllowedOriginValidator(func(origin string) bool {
+		return true // Allow all origins
+	})
+	headersOk := handlers.AllowedHeaders([]string{})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "OPTIONS"})
+
+	return handlers.CORS(headersOk, allowAllOrigins, methodsOk)(r)
 }
 
 func (a *API) Serve(ctx context.Context) error {

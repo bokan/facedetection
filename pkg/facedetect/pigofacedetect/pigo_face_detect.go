@@ -2,10 +2,10 @@ package pigofacedetect
 
 import (
 	"context"
-	"fmt"
 	_ "image/jpeg" // Add JPEG support.
 	"io"
 	"io/ioutil"
+	"path"
 
 	"github.com/bokan/stream/pkg/facedetect"
 	pigo "github.com/esimov/pigo/core"
@@ -28,10 +28,11 @@ var (
 )
 
 type PigoFaceDetect struct {
+	cascadeDir string
 }
 
-func NewPigoFaceDetect() *PigoFaceDetect {
-	return &PigoFaceDetect{}
+func NewPigoFaceDetect(cascadeDir string) *PigoFaceDetect {
+	return &PigoFaceDetect{cascadeDir: cascadeDir}
 }
 
 func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]facedetect.Face, error) {
@@ -66,7 +67,7 @@ func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]fac
 		ImageParams: *imgParams,
 	}
 
-	cascadeFile, err := ioutil.ReadFile("cascades/facefinder")
+	cascadeFile, err := ioutil.ReadFile(path.Join(pfd.cascadeDir, "facefinder"))
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +82,7 @@ func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]fac
 
 	pl := pigo.NewPuplocCascade()
 
-	cascade, err := ioutil.ReadFile("cascades/puploc")
+	cascade, err := ioutil.ReadFile(path.Join(pfd.cascadeDir, "puploc"))
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,7 @@ func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]fac
 	}
 	_ = plc
 
-	flpcs, err := pl.ReadCascadeDir("cascades/lps")
+	flpcs, err := pl.ReadCascadeDir(path.Join(pfd.cascadeDir, "lps"))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +104,6 @@ func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]fac
 
 	// Calculate the intersection over union (IoU) of two clusters.
 	faces = classifier.ClusterDetections(faces, IoUThreshold)
-	fmt.Printf("Faces: %v\n", faces)
 
 	var outFaces []facedetect.Face
 
@@ -150,9 +150,6 @@ func detectEyes(plc *pigo.PuplocCascade, face pigo.Detection, imgParams *pigo.Im
 		Perturbs: Perturbs,
 	}
 	leftEye := plc.RunDetector(*puploc, *imgParams, Angle, false)
-	if leftEye.Row > 0 && leftEye.Col > 0 {
-		fmt.Printf("leftEye: %d, %d", leftEye.Col, leftEye.Row)
-	}
 
 	// Right eye
 	puploc = &pigo.Puploc{
@@ -162,9 +159,6 @@ func detectEyes(plc *pigo.PuplocCascade, face pigo.Detection, imgParams *pigo.Im
 		Perturbs: Perturbs,
 	}
 	rightEye := plc.RunDetector(*puploc, *imgParams, Angle, false)
-	if rightEye.Row > 0 && rightEye.Col > 0 {
-		fmt.Printf("rightEye: %d, %d", rightEye.Col, rightEye.Row)
-	}
 
 	return leftEye, rightEye
 }
@@ -200,7 +194,6 @@ func detectMouth(flpcs map[string][]*pigo.FlpCascade, leftEye *pigo.Puploc, righ
 	}
 	mx := mouthMinX + (mouthMaxX-mouthMinX)/2
 	my := mouthMinY + (mouthMaxY-mouthMinY)/2
-	fmt.Printf("mouth: %d, %d", mx, my)
 	return &facedetect.Point{
 		X: mx,
 		Y: my,

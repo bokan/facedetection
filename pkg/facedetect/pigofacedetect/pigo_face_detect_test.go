@@ -41,6 +41,11 @@ func TestPigoFaceDetect_DetectFaces(t *testing.T) {
 			wantErr:  false,
 		},
 		{
+			name:     "People001 Truncated to 50k",
+			fileName: "people001trunc.jpg",
+			wantErr:  true,
+		},
+		{
 			name:     "People002",
 			fileName: "people002.jpg",
 			wantErr:  false,

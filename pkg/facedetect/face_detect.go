@@ -18,7 +18,7 @@ type Point struct {
 }
 
 type Face struct {
-	Bounds   *Bounds `json:"Bounds"`
+	Bounds   *Bounds `json:"bounds"`
 	Mouth    *Point  `json:"mouth,omitempty"`
 	RightEye *Point  `json:"right_eye,omitempty"`
 	LeftEye  *Point  `json:"left_eye,omitempty"`

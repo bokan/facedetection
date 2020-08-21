@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,10 +16,18 @@ import (
 )
 
 const (
-	ExitCodeInterrupt = 2
+	ExitCodeError = 1
 )
 
-func run(ctx context.Context) error {
+func run(ctx context.Context, args []string) error {
+	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	var (
+		port = flags.Int("p", 8000, "-p <listen_port>")
+	)
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
+
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		return err
@@ -26,8 +36,9 @@ func run(ctx context.Context) error {
 
 	d := httpdownloader.NewHTTPDownloader(time.Second*5, 10*1024*1024)
 	fd := pigofacedetect.NewPigoFaceDetect("pkg/facedetect/pigofacedetect/cascades")
-	a := api.NewAPI(":8000", d, fd)
-	sugar.Info("Server started")
+	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
+
+	sugar.Infow("Starting service", "port", *port)
 	if err := a.Serve(ctx, a.Routes()); err != nil {
 		if err == http.ErrServerClosed {
 			sugar.Warn("Context ended, server stopped.")
@@ -57,8 +68,8 @@ func main() {
 		}
 	}()
 
-	if err := run(ctx); err != nil {
-		os.Exit(ExitCodeInterrupt)
+	if err := run(ctx, os.Args); err != nil {
+		os.Exit(ExitCodeError)
 	}
 
 }

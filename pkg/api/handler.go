@@ -13,6 +13,7 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Faces structure is response sent to client. It encapsulates response from face detector.
 type Faces struct {
 	Faces []facedetect.Face `json:"Faces"`
 }
@@ -40,6 +41,9 @@ func (a *API) handleFaceDetect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "image download failed", 400)
 		return
 	}
+	defer func() {
+		_ = body.Close()
+	}()
 
 	detections, err := a.fd.DetectFaces(r.Context(), body)
 	if err != nil {

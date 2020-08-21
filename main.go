@@ -22,7 +22,8 @@ const (
 func run(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var (
-		port = flags.Int("p", 8000, "-p <listen_port>")
+		port         = flags.Int("p", 8000, "-p <listen_port>")
+		cascadesPath = flags.String("c", "pkg/facedetect/pigofacedetect/cascades", "-c <cascades_path>")
 	)
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
@@ -35,7 +36,7 @@ func run(ctx context.Context, args []string) error {
 	sugar := logger.Sugar()
 
 	d := httpdownloader.NewHTTPDownloader(time.Second*5, 10*1024*1024)
-	fd := pigofacedetect.NewPigoFaceDetect("pkg/facedetect/pigofacedetect/cascades")
+	fd := pigofacedetect.NewPigoFaceDetector(*cascadesPath)
 	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
 
 	sugar.Infow("Starting service", "port", *port)

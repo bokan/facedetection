@@ -2,7 +2,7 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"image"
 	"net/http"
 	"net/url"
 
@@ -47,9 +47,11 @@ func (a *API) handleFaceDetect(w http.ResponseWriter, r *http.Request) {
 
 	detections, err := a.fd.DetectFaces(r.Context(), body)
 	if err != nil {
-		// TODO: Handle unsupported image formats & non image files
-		fmt.Printf("%v\n", err)
-		http.Error(w, "an internal error happened during face detection", 500)
+		if err == image.ErrFormat {
+			http.Error(w, "unsupported image format", 400)
+			return
+		}
+		http.Error(w, "an internal error happened the during face detection", 500)
 		return
 	}
 

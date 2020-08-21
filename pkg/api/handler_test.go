@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"image"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -52,6 +53,19 @@ func TestAPI_handleFaceDetect_DownloaderError(t *testing.T) {
 	a.handleFaceDetect(rec, req)
 	if rec.Result().StatusCode != 400 {
 		t.Error("handler should return status code 400 when Downloader returns an error")
+	}
+}
+
+func TestAPI_handleFaceDetect_FaceDetectorErrorUnsupportedImageFormat(t *testing.T) {
+	a := &API{
+		d:  fakedownloader.NewFakeDownloader(ioutil.NopCloser(strings.NewReader("")), nil),
+		fd: fakefacedetect.NewFakeFaceDetect(nil, image.ErrFormat),
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/?image_url=http://localhost/", nil)
+	a.handleFaceDetect(rec, req)
+	if rec.Result().StatusCode != 400 {
+		t.Error("handler should return status code 400 when face detector is unable to decode image")
 	}
 }
 

@@ -42,9 +42,19 @@ func TestHTTPDownloader_InvalidUrl(t *testing.T) {
 	d := NewHTTPDownloader(time.Second*5, 512)
 	ctx := context.Background()
 
-	_, err := d.Download(ctx, "")
+	_, err := d.Download(ctx, ":")
 	if err == nil {
 		t.Errorf("should return invalid url error")
+		return
+	}
+}
+
+func TestHTTPDownloader_UnroutableAddress(t *testing.T) {
+	d := NewHTTPDownloader(time.Millisecond*5, 1024)
+	ctx := context.Background()
+	_, err := d.Download(ctx, "http://198.51.100.1:8888/")
+	if err == nil {
+		t.Errorf("failing to connect should return an error")
 		return
 	}
 }
@@ -78,6 +88,5 @@ func TestHTTPDownloader_FileTooBig(t *testing.T) {
 	_, err := d.Download(ctx, srv.URL)
 	if err == nil {
 		t.Errorf("should return file too big error")
-		return
 	}
 }

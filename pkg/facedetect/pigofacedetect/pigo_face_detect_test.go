@@ -10,7 +10,7 @@ import (
 )
 
 func TestPigoFaceDetect_Foo(t *testing.T) {
-	p := NewPigoFaceDetect()
+	p := NewPigoFaceDetect("cascades")
 	ctx := context.Background()
 	f, err := os.Open("testdata/people001.jpg")
 	if err != nil {
@@ -53,7 +53,7 @@ func TestPigoFaceDetect_DetectFaces(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pfd := NewPigoFaceDetect()
+			pfd := NewPigoFaceDetect("cascades")
 
 			f, err := os.Open(path.Join("testdata", tt.fileName))
 			if err != nil {

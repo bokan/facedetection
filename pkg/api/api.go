@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bokan/stream/pkg/download"
-	"github.com/bokan/stream/pkg/facedetect"
+	"github.com/bokan/facedetection/pkg/download"
+	"github.com/bokan/facedetection/pkg/facedetect"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )

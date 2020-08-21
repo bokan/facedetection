@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/bokan/stream/pkg/api"
-	"github.com/bokan/stream/pkg/download/httpdownloader"
-	"github.com/bokan/stream/pkg/facedetect/pigofacedetect"
+	"github.com/bokan/facedetection/pkg/api"
+	"github.com/bokan/facedetection/pkg/download/httpdownloader"
+	"github.com/bokan/facedetection/pkg/facedetect/pigofacedetect"
 	"go.uber.org/zap"
 )
 

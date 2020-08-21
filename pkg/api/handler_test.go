@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bokan/stream/pkg/download/fakedownloader"
-	"github.com/bokan/stream/pkg/facedetect"
-	"github.com/bokan/stream/pkg/facedetect/fakefacedetect"
+	"github.com/bokan/facedetection/pkg/download/fakedownloader"
+	"github.com/bokan/facedetection/pkg/facedetect"
+	"github.com/bokan/facedetection/pkg/facedetect/fakefacedetect"
 )
 
 func TestAPI_handleFaceDetect_WithoutImageURLParam(t *testing.T) {

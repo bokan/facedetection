@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/bokan/stream/pkg/facedetect"
+	"github.com/bokan/facedetection/pkg/facedetect"
 )
 
 type FakeFaceDetect struct {

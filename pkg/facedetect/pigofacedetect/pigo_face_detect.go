@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/bokan/stream/pkg/facedetect"
+	"github.com/bokan/facedetection/pkg/facedetect"
 	pigo "github.com/esimov/pigo/core"
 	"github.com/fogleman/gg"
 )

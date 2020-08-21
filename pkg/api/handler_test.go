@@ -2,8 +2,10 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/bokan/stream/pkg/download/fakedownloader"
@@ -55,7 +57,7 @@ func TestAPI_handleFaceDetect_DownloaderError(t *testing.T) {
 
 func TestAPI_handleFaceDetect_FaceDetectorError(t *testing.T) {
 	a := &API{
-		d:  fakedownloader.NewFakeDownloader(nil, nil),
+		d:  fakedownloader.NewFakeDownloader(ioutil.NopCloser(strings.NewReader("")), nil),
 		fd: fakefacedetect.NewFakeFaceDetect(nil, fmt.Errorf("fake error")),
 	}
 	rec := httptest.NewRecorder()
@@ -90,7 +92,7 @@ func TestAPI_handleFaceDetect_Success(t *testing.T) {
 		},
 	}
 	a := &API{
-		d:  fakedownloader.NewFakeDownloader(nil, nil),
+		d:  fakedownloader.NewFakeDownloader(ioutil.NopCloser(strings.NewReader("")), nil),
 		fd: fakefacedetect.NewFakeFaceDetect(faces, nil),
 	}
 	rec := httptest.NewRecorder()

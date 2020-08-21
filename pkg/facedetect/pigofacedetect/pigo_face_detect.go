@@ -35,6 +35,8 @@ func NewPigoFaceDetect(cascadeDir string) *PigoFaceDetect {
 	return &PigoFaceDetect{cascadeDir: cascadeDir}
 }
 
+// DetectFaces analyzes image provided by img parameter and
+// returns slice of detected faces with facial features.
 func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]facedetect.Face, error) {
 	_ = ctx // Reserved for possible future use.
 

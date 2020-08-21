@@ -47,11 +47,12 @@ func (a *API) handleFaceDetect(w http.ResponseWriter, r *http.Request) {
 
 	detections, err := a.fd.DetectFaces(r.Context(), body)
 	if err != nil {
+		// TODO: Is image dependency really required here?
 		if err == image.ErrFormat {
 			http.Error(w, "unsupported image format", 400)
 			return
 		}
-		http.Error(w, "an internal error happened the during face detection", 500)
+		http.Error(w, "an internal error happened during face detection", 500)
 		return
 	}
 

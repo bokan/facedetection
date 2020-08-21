@@ -27,17 +27,17 @@ var (
 	mouthCascade = []string{"lp93", "lp84", "lp82", "lp81"}
 )
 
-type PigoFaceDetect struct {
+type PigoFaceDetector struct {
 	cascadeDir string
 }
 
-func NewPigoFaceDetect(cascadeDir string) *PigoFaceDetect {
-	return &PigoFaceDetect{cascadeDir: cascadeDir}
+func NewPigoFaceDetector(cascadeDir string) *PigoFaceDetector {
+	return &PigoFaceDetector{cascadeDir: cascadeDir}
 }
 
 // DetectFaces analyzes image provided by img parameter and
 // returns slice of detected faces with facial features.
-func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]facedetect.Face, error) {
+func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]facedetect.Face, error) {
 	_ = ctx // Reserved for possible future use.
 
 	var dc *gg.Context
@@ -110,6 +110,9 @@ func (pfd PigoFaceDetect) DetectFaces(ctx context.Context, img io.Reader) ([]fac
 	var outFaces []facedetect.Face
 
 	for _, face := range faces {
+		if face.Q < 20 {
+			continue
+		}
 		outFace := facedetect.Face{
 			Bounds: &facedetect.Bounds{
 				X:      face.Col - face.Scale/2,

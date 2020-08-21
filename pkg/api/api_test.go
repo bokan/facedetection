@@ -1,13 +1,15 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestAPI_Routes_CORS(t *testing.T) {
-	a := &API{}
+	a := NewAPI("", nil, nil)
 	r := a.Routes()
 
 	rec := httptest.NewRecorder()
@@ -18,5 +20,14 @@ func TestAPI_Routes_CORS(t *testing.T) {
 
 	if rec.Header().Get("Access-Control-Allow-Origin") != origin {
 		t.Error("Access-Control-Allow-Origin header missing")
+	}
+}
+
+func TestAPI_Serve(t *testing.T) {
+	a := NewAPI("", nil, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
+	_ = cancel
+	if err := a.Serve(ctx, nil); err != http.ErrServerClosed {
+		t.Error("serve should return ErrServerClosed error when context ends")
 	}
 }

@@ -10,6 +10,8 @@ type FakeDownloader struct {
 	err error
 }
 
+// NewFakeDownloader returns a test double downloader. Parameters passed will be returned
+// by the Download function.
 func NewFakeDownloader(rc io.ReadCloser, err error) *FakeDownloader {
 	return &FakeDownloader{rc: rc, err: err}
 }

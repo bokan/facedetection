@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
 func TestPigoFaceDetect_Foo(t *testing.T) {
-	p := NewPigoFaceDetect("cascades")
+	p := NewPigoFaceDetector("cascades")
 	ctx := context.Background()
 	f, err := os.Open("testdata/people001.jpg")
 	if err != nil {
@@ -53,7 +55,7 @@ func TestPigoFaceDetect_DetectFaces(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pfd := NewPigoFaceDetect("cascades")
+			pfd := NewPigoFaceDetector("cascades")
 
 			f, err := os.Open(path.Join("testdata", tt.fileName))
 			if err != nil {
@@ -72,4 +74,13 @@ func TestPigoFaceDetect_DetectFaces(t *testing.T) {
 			//}
 		})
 	}
+}
+
+func TestPigoFaceDetect_DetectFacesWithInvalidFormat(t *testing.T) {
+	pfd := NewPigoFaceDetector("cascades")
+	_, err := pfd.DetectFaces(context.Background(), strings.NewReader("foo"))
+	if err != image.ErrFormat {
+		t.Error("detect faces should return ErrFormat when unsupported image format is supplied")
+	}
+
 }

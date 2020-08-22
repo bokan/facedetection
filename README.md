@@ -12,4 +12,4 @@ go run cmd/facedetection/facedetection.go
 
 ## Learn more
 
-Read the [blog post on this project](https://github.com/bokan/facedetection/doc/writing-a-face-detection-api-in-go.md).
+Read the [blog post on this project](https://github.com/bokan/facedetection/blob/develop/doc/writing-a-face-detection-api-in-go.md).

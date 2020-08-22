@@ -13,6 +13,8 @@ import (
 	"github.com/bokan/facedetection/pkg/api"
 	"github.com/bokan/facedetection/pkg/download/httpdownloader"
 	"github.com/bokan/facedetection/pkg/facedetect/pigofacedetect"
+	"github.com/bokan/facedetection/pkg/httpcache"
+	"github.com/bokan/facedetection/pkg/httpcache/cachestore/memorycachestore"
 	"go.uber.org/zap"
 )
 
@@ -22,17 +24,17 @@ const (
 )
 
 func run(ctx context.Context, args []string) error {
+	log, err := initLogger()
+	if err != nil {
+		return err
+	}
+
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var (
 		port         = flags.Int("p", 8000, "configure listen port")
 		cascadesPath = flags.String("c", "pkg/facedetect/pigofacedetect/cascades", "configure cascades path")
 	)
 	if err := flags.Parse(args[1:]); err != nil {
-		return err
-	}
-
-	log, err := initLogger()
-	if err != nil {
 		return err
 	}
 
@@ -45,7 +47,8 @@ func run(ctx context.Context, args []string) error {
 	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
 
 	log.Infow("Starting service", "port", *port)
-	if err := a.Serve(ctx, a.Routes()); err != nil {
+	c := httpcache.NewHTTPCache(memorycachestore.NewMemoryCacheStore())
+	if err := a.Serve(ctx, c.Middleware()(a.Routes())); err != nil {
 		if err == http.ErrServerClosed {
 			log.Warn("Context ended, server stopped.")
 			return nil

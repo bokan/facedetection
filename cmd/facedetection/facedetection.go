@@ -24,8 +24,8 @@ const (
 func run(ctx context.Context, args []string) error {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	var (
-		port         = flags.Int("p", 8000, "specify the listen port")
-		cascadesPath = flags.String("c", "pkg/facedetect/pigofacedetect/cascades", "specifies the cascades path")
+		port         = flags.Int("p", 8000, "configure listen port")
+		cascadesPath = flags.String("c", "pkg/facedetect/pigofacedetect/cascades", "configure cascades path")
 	)
 	if err := flags.Parse(args[1:]); err != nil {
 		return err

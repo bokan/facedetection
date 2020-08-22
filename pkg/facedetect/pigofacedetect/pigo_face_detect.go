@@ -3,6 +3,7 @@ package pigofacedetect
 import (
 	"context"
 	_ "image/jpeg" // Add JPEG support.
+	_ "image/png"  // Add PNG support.
 	"io"
 	"io/ioutil"
 	"path"
@@ -200,7 +201,7 @@ func detectMouth(flpcs map[string][]*pigo.FlpCascade, leftEye *pigo.Puploc, righ
 		}
 	}
 
-	if mouthMinX == 0 {
+	if mouthMinX == MaxSize {
 		return nil
 	}
 	mx := mouthMinX + (mouthMaxX-mouthMinX)/2

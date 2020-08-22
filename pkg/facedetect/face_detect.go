@@ -2,7 +2,13 @@ package facedetect
 
 import (
 	"context"
+	"fmt"
 	"io"
+)
+
+var (
+	ErrUnsupportedImageFormat = fmt.Errorf("unsupported image format")
+	ErrImageError             = fmt.Errorf("error loading image")
 )
 
 type Bounds struct {

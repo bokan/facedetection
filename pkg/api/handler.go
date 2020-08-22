@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"image"
 	"net/http"
 	"net/url"
 
@@ -49,8 +48,7 @@ func (a *API) handleFaceDetect(w http.ResponseWriter, r *http.Request) {
 
 	detections, err := a.fd.DetectFaces(r.Context(), body)
 	if err != nil {
-		// TODO: Is image dependency really required here?
-		if err == image.ErrFormat {
+		if err == facedetect.ErrUnsupportedImageFormat || err == facedetect.ErrImageError {
 			http.Error(w, "unsupported image format", 400)
 			return
 		}

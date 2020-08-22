@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"image"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -59,7 +58,7 @@ func TestAPI_handleFaceDetect_DownloaderError(t *testing.T) {
 func TestAPI_handleFaceDetect_FaceDetectorErrorUnsupportedImageFormat(t *testing.T) {
 	a := &API{
 		d:  fakedownloader.NewFakeDownloader(ioutil.NopCloser(strings.NewReader("")), nil),
-		fd: fakefacedetect.NewFakeFaceDetect(nil, image.ErrFormat),
+		fd: fakefacedetect.NewFakeFaceDetect(nil, facedetect.ErrUnsupportedImageFormat),
 	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/?image_url=http://localhost/", nil)

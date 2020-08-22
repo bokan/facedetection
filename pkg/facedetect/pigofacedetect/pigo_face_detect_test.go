@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"image"
 	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/bokan/facedetection/pkg/facedetect"
 )
 
 var (
@@ -63,7 +64,6 @@ func TestPigoFaceDetect_DetectFaces(t *testing.T) {
 
 			gfPath := path.Join("testdata", tt.fileName+".json")
 
-			// TODO: Add golden records
 			if *update == true {
 				if err := ioutil.WriteFile(gfPath, got, 0644); err != nil {
 					t.Fatalf("unable to write golden file: %v", err)
@@ -91,8 +91,8 @@ func TestPigoFaceDetect_DetectFacesWithInvalidFormat(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := pfd.DetectFaces(context.Background(), strings.NewReader("foo"))
-	if err != image.ErrFormat {
-		t.Error("detect faces should return ErrFormat when unsupported image format is supplied")
+	if err != facedetect.ErrImageError {
+		t.Error("detect faces should return facedetect.ErrImageError when unsupported image format is supplied")
 	}
 
 }

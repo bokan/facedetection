@@ -2,6 +2,7 @@ package pigofacedetect
 
 import (
 	"context"
+	"image"
 	_ "image/jpeg" // Add JPEG support.
 	_ "image/png"  // Add PNG support.
 	"io"
@@ -83,6 +84,9 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 
 	src, err := pigo.DecodeImage(img)
 	if err != nil {
+		if err == image.ErrFormat {
+			return nil, facedetect.ErrImageError
+		}
 		return nil, err
 	}
 

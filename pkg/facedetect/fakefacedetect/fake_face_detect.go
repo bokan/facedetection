@@ -12,6 +12,8 @@ type FakeFaceDetect struct {
 	err        error
 }
 
+// NewFakeFaceDetect returns a test double face detector. Parameters passed will be returned
+// by the DetectFaces function.
 func NewFakeFaceDetect(detections []facedetect.Face, err error) *FakeFaceDetect {
 	return &FakeFaceDetect{detections: detections, err: err}
 }

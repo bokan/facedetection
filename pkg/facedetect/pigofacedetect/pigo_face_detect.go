@@ -28,11 +28,48 @@ var (
 )
 
 type PigoFaceDetector struct {
-	cascadeDir string
+	classifier *pigo.Pigo
+	plc        *pigo.PuplocCascade
+	flpcs      map[string][]*pigo.FlpCascade
 }
 
-func NewPigoFaceDetector(cascadeDir string) *PigoFaceDetector {
-	return &PigoFaceDetector{cascadeDir: cascadeDir}
+// NewPigoFaceDetector creates a new instance of PigoFaceDetector, a pigo based
+// implementation of FaceDetector.
+func NewPigoFaceDetector() *PigoFaceDetector {
+	return &PigoFaceDetector{}
+}
+
+// LoadCascades loads binary cascade files required by pigo.
+func (pfd *PigoFaceDetector) LoadCascades(cascadeDir string) error {
+	cascadeFile, err := ioutil.ReadFile(path.Join(cascadeDir, "facefinder"))
+	if err != nil {
+		return err
+	}
+
+	p := pigo.NewPigo()
+	// Unpack the binary file. This will return the number of cascade trees,
+	// the tree depth, the threshold and the prediction from tree's leaf nodes.
+	pfd.classifier, err = p.Unpack(cascadeFile)
+	if err != nil {
+		return err
+	}
+
+	pl := pigo.NewPuplocCascade()
+
+	cascade, err := ioutil.ReadFile(path.Join(cascadeDir, "puploc"))
+	if err != nil {
+		return err
+	}
+	pfd.plc, err = pl.UnpackCascade(cascade)
+	if err != nil {
+		return err
+	}
+
+	pfd.flpcs, err = pl.ReadCascadeDir(path.Join(cascadeDir, "lps"))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DetectFaces analyzes image provided by img parameter and
@@ -69,43 +106,12 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 		ImageParams: *imgParams,
 	}
 
-	cascadeFile, err := ioutil.ReadFile(path.Join(pfd.cascadeDir, "facefinder"))
-	if err != nil {
-		return nil, err
-	}
-
-	p := pigo.NewPigo()
-	// Unpack the binary file. This will return the number of cascade trees,
-	// the tree depth, the threshold and the prediction from tree's leaf nodes.
-	classifier, err := p.Unpack(cascadeFile)
-	if err != nil {
-		return nil, err
-	}
-
-	pl := pigo.NewPuplocCascade()
-
-	cascade, err := ioutil.ReadFile(path.Join(pfd.cascadeDir, "puploc"))
-	if err != nil {
-		return nil, err
-	}
-	plc, err := pl.UnpackCascade(cascade)
-	if err != nil {
-		return nil, err
-	}
-	_ = plc
-
-	flpcs, err := pl.ReadCascadeDir(path.Join(pfd.cascadeDir, "lps"))
-	if err != nil {
-		return nil, err
-	}
-	_ = flpcs
-
 	// Run the classifier over the obtained leaf nodes and return the detection results.
 	// The result contains quadruplets representing the row, column, scale and detection score.
-	faces := classifier.RunCascade(cParams, Angle)
+	faces := pfd.classifier.RunCascade(cParams, Angle)
 
 	// Calculate the intersection over union (IoU) of two clusters.
-	faces = classifier.ClusterDetections(faces, IoUThreshold)
+	faces = pfd.classifier.ClusterDetections(faces, IoUThreshold)
 
 	var outFaces []facedetect.Face
 
@@ -122,7 +128,7 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 			},
 		}
 		if face.Q > FeaturesQualityThreshold && face.Scale > 50 {
-			leftEye, rightEye := detectEyes(plc, face, imgParams)
+			leftEye, rightEye := detectEyes(pfd.plc, face, imgParams)
 			if leftEye != nil {
 				outFace.LeftEye = &facedetect.Point{
 					X: leftEye.Col,
@@ -135,7 +141,7 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 					Y: rightEye.Row,
 				}
 			}
-			m := detectMouth(flpcs, leftEye, rightEye, imgParams)
+			m := detectMouth(pfd.flpcs, leftEye, rightEye, imgParams)
 			if m != nil {
 				outFace.Mouth = m
 			}

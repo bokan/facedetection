@@ -4,9 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/bokan/facedetection/pkg/api"
@@ -36,7 +38,11 @@ func run(ctx context.Context, args []string) error {
 	sugar := logger.Sugar()
 
 	d := httpdownloader.NewHTTPDownloader(time.Second*5, 10*1024*1024)
-	fd := pigofacedetect.NewPigoFaceDetector(*cascadesPath)
+	fd := pigofacedetect.NewPigoFaceDetector()
+	if err := fd.LoadCascades(*cascadesPath); err != nil {
+		sugar.Fatalw("PigoFaceDetector was unable to load cascades, provide cascade dir with -c flag", "dir", *cascadesPath)
+		return err
+	}
 	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
 
 	sugar.Infow("Starting service", "port", *port)
@@ -52,6 +58,11 @@ func run(ctx context.Context, args []string) error {
 }
 
 func main() {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(dir)
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 

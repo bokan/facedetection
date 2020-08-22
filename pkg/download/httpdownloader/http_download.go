@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/bokan/facedetection/pkg/download"
 )
 
 type HTTPDownloader struct {
@@ -32,14 +34,14 @@ func (d *HTTPDownloader) Download(ctx context.Context, url string) (io.ReadClose
 	}
 	resp, err := d.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("request failed: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("server returned status code %d", resp.StatusCode)
+		return nil, download.ErrNon200StatusCode
 	}
 	if resp.ContentLength > d.maxFileSize {
-		return nil, fmt.Errorf("file is too big")
+		return nil, download.ErrFileIsTooBig
 	}
 
 	return resp.Body, nil

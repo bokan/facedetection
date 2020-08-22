@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/bokan/facedetection/pkg/download"
 )
 
 func TestHTTPDownloader_Download1024ByteFile(t *testing.T) {
@@ -69,7 +71,7 @@ func TestHTTPDownloader_Non200StatusCode(t *testing.T) {
 	}))
 
 	_, err := d.Download(ctx, srv.URL)
-	if err == nil {
+	if err != download.ErrNon200StatusCode {
 		t.Errorf("status code 404 should cause an error")
 		return
 	}
@@ -86,7 +88,7 @@ func TestHTTPDownloader_FileTooBig(t *testing.T) {
 	}))
 
 	_, err := d.Download(ctx, srv.URL)
-	if err == nil {
+	if err != download.ErrFileIsTooBig {
 		t.Errorf("should return file too big error")
 	}
 }

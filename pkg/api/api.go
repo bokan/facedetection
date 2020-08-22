@@ -19,9 +19,9 @@ type API struct {
 	srv  http.Server
 }
 
-// NewAPI creates a REST API responsible for serving face detection requests.
-// Call Serve afterwards and pass parent context and return value of Routes
-// as parameters,
+// NewAPI creates a HTTP API responsible for serving face detection requests.
+// Call Serve afterwards and pass a parent context and the return value of Routes
+// as parameters.
 func NewAPI(addr string, d download.Downloader, fd facedetect.FaceDetector) *API {
 	return &API{addr: addr, d: d, fd: fd}
 }
@@ -41,7 +41,7 @@ func (a *API) Routes() http.Handler {
 }
 
 // Serve starts a HTTP server and serves provided handler. To invoke face detection
-// endpoint, perform a GET request on /v1/face-detect?={image_url}
+// endpoint, perform a GET request on /v1/face-detect?={image_url}.
 func (a *API) Serve(ctx context.Context, handler http.Handler) error {
 	a.srv = http.Server{
 		Addr:              a.addr,

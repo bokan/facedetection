@@ -9,13 +9,13 @@ import (
 )
 
 type HTTPDownloader struct {
+	client        *http.Client
 	clientTimeOut time.Duration
 	maxFileSize   int64
-	client        http.Client
 }
 
-func NewHTTPDownloader(clientTimeOut time.Duration, maxFileSize int64) *HTTPDownloader {
-	return &HTTPDownloader{clientTimeOut: clientTimeOut, maxFileSize: maxFileSize, client: http.Client{}}
+func NewHTTPDownloader(client *http.Client, clientTimeOut time.Duration, maxFileSize int64) *HTTPDownloader {
+	return &HTTPDownloader{clientTimeOut: clientTimeOut, maxFileSize: maxFileSize, client: client}
 }
 
 // Download initiates a time constrained HTTP GET request, validates Content-Length and returns response body io.ReadCloser.

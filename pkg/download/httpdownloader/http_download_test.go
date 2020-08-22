@@ -10,7 +10,7 @@ import (
 )
 
 func TestHTTPDownloader_Download1024ByteFile(t *testing.T) {
-	d := NewHTTPDownloader(time.Second*5, 4*1024*1024)
+	d := NewHTTPDownloader(http.DefaultClient, time.Second*5, 4*1024*1024)
 	ctx := context.Background()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -39,7 +39,7 @@ func TestHTTPDownloader_Download1024ByteFile(t *testing.T) {
 }
 
 func TestHTTPDownloader_InvalidUrl(t *testing.T) {
-	d := NewHTTPDownloader(time.Second*5, 512)
+	d := NewHTTPDownloader(http.DefaultClient, time.Second*5, 512)
 	ctx := context.Background()
 
 	_, err := d.Download(ctx, ":")
@@ -50,7 +50,7 @@ func TestHTTPDownloader_InvalidUrl(t *testing.T) {
 }
 
 func TestHTTPDownloader_UnroutableAddress(t *testing.T) {
-	d := NewHTTPDownloader(time.Millisecond*5, 1024)
+	d := NewHTTPDownloader(http.DefaultClient, time.Millisecond*5, 1024)
 	ctx := context.Background()
 	_, err := d.Download(ctx, "http://198.51.100.1:8888/")
 	if err == nil {
@@ -60,7 +60,7 @@ func TestHTTPDownloader_UnroutableAddress(t *testing.T) {
 }
 
 func TestHTTPDownloader_Non200StatusCode(t *testing.T) {
-	d := NewHTTPDownloader(time.Second*5, 4*1024*1024)
+	d := NewHTTPDownloader(http.DefaultClient, time.Second*5, 4*1024*1024)
 	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(404)
@@ -76,7 +76,7 @@ func TestHTTPDownloader_Non200StatusCode(t *testing.T) {
 }
 
 func TestHTTPDownloader_FileTooBig(t *testing.T) {
-	d := NewHTTPDownloader(time.Second*5, 512)
+	d := NewHTTPDownloader(http.DefaultClient, time.Second*5, 512)
 	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Content-Length", "1024")
@@ -90,3 +90,5 @@ func TestHTTPDownloader_FileTooBig(t *testing.T) {
 		t.Errorf("should return file too big error")
 	}
 }
+
+// TODO: Test timeouts

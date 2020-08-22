@@ -15,6 +15,7 @@ import (
 	"github.com/bokan/facedetection/pkg/facedetect/pigofacedetect"
 	"github.com/bokan/facedetection/pkg/httpcache"
 	"github.com/bokan/facedetection/pkg/httpcache/cachestore/memorycachestore"
+	"github.com/bokan/facedetection/pkg/requestlog"
 	"go.uber.org/zap"
 )
 
@@ -46,9 +47,11 @@ func run(ctx context.Context, args []string) error {
 	}
 	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
 
+	cache := httpcache.NewHTTPCache(memorycachestore.NewMemoryCacheStore()).Middleware()
+	rl := requestlog.NewRequestLogger(log).Middleware()
+
 	log.Infow("Starting service", "port", *port)
-	c := httpcache.NewHTTPCache(memorycachestore.NewMemoryCacheStore())
-	if err := a.Serve(ctx, c.Middleware()(a.Routes())); err != nil {
+	if err := a.Serve(ctx, rl(cache(a.Routes()))); err != nil {
 		if err == http.ErrServerClosed {
 			log.Warn("Context ended, server stopped.")
 			return nil

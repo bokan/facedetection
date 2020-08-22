@@ -24,10 +24,10 @@ func TestAPI_Routes_CORS(t *testing.T) {
 }
 
 func TestAPI_Serve(t *testing.T) {
-	a := NewAPI("", nil, nil)
+	a := NewAPI(":0", nil, nil)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*10)
 	_ = cancel
 	if err := a.Serve(ctx, nil); err != http.ErrServerClosed {
-		t.Error("serve should return ErrServerClosed error when context ends")
+		t.Errorf("serve should return ErrServerClosed error when context ends, got: %v", err)
 	}
 }

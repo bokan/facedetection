@@ -1,5 +1,7 @@
 # Face Detection API in Go
 
+![build](https://github.com/bokan/facedetection/workflows/build/badge.svg)
+
 ## Quick start:
 
 * Clone this repository

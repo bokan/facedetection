@@ -37,7 +37,7 @@ func (a *API) Routes() http.Handler {
 	headersOk := handlers.AllowedHeaders([]string{})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "OPTIONS"})
 
-	return handlers.CORS(headersOk, allowAllOrigins, methodsOk)(r)
+	return handlers.RecoveryHandler()(handlers.CORS(headersOk, allowAllOrigins, methodsOk)(r))
 }
 
 // Serve starts a HTTP server and serves provided handler. To invoke face detection

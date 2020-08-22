@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/bokan/facedetection/pkg/httpcache/cachestore"
+	"github.com/bokan/facedetection/pkg/responserecorder"
 )
 
 type HTTPCache struct {
@@ -34,7 +35,7 @@ func (c *HTTPCache) Middleware() func(handler http.Handler) http.Handler {
 			}
 
 			w.Header().Set("X-Cache", "MISS")
-			rr := NewResponseRecorder(w, r)
+			rr := responserecorder.NewResponseRecorder(w, r)
 			handler.ServeHTTP(rr, r)
 			if rr.StatusCode() == 200 {
 				_ = c.store.Save(key, &cachestore.Response{

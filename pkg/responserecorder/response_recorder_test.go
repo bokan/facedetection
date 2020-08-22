@@ -1,4 +1,4 @@
-package httpcache
+package responserecorder
 
 import (
 	"net/http"

@@ -5,15 +5,15 @@ import (
 	"time"
 
 	"github.com/bokan/facedetection/pkg/responserecorder"
-	"go.uber.org/zap"
 )
 
+type RequestLoggerFunc func(kv map[string]interface{})
 type RequestLogger struct {
-	log *zap.SugaredLogger
+	lf RequestLoggerFunc
 }
 
-func NewRequestLogger(log *zap.SugaredLogger) *RequestLogger {
-	return &RequestLogger{log: log}
+func NewRequestLogger(lf RequestLoggerFunc) *RequestLogger {
+	return &RequestLogger{lf: lf}
 }
 
 func (l *RequestLogger) Middleware() func(handler http.Handler) http.Handler {
@@ -23,7 +23,14 @@ func (l *RequestLogger) Middleware() func(handler http.Handler) http.Handler {
 			rr := responserecorder.NewResponseRecorder(w, r)
 			handler.ServeHTTP(rr, r)
 			took := time.Since(before)
-			l.log.Debugw("Request", "ip", getIP(r), "method", r.Method, "url", r.URL, "status", rr.StatusCode(), "took", took.Milliseconds())
+
+			info := make(map[string]interface{})
+			info["ip"] = getIP(r)
+			info["method"] = r.Method
+			info["url"] = r.URL
+			info["status"] = rr.StatusCode()
+			info["took"] = took.Milliseconds()
+			l.lf(info)
 		})
 	}
 }

@@ -48,7 +48,7 @@ func run(ctx context.Context, args []string) error {
 	a := api.NewAPI(fmt.Sprintf(":%d", *port), d, fd)
 
 	cache := httpcache.NewHTTPCache(memorycachestore.NewMemoryCacheStore()).Middleware()
-	rl := requestlog.NewRequestLogger(log).Middleware()
+	rl := requestLogger(log)
 
 	log.Infow("Starting service", "port", *port)
 	if err := a.Serve(ctx, rl(cache(a.Routes()))); err != nil {
@@ -69,6 +69,18 @@ func initLogger() (*zap.SugaredLogger, error) {
 	}
 	sugar := logger.Sugar()
 	return sugar, nil
+}
+
+func requestLogger(log *zap.SugaredLogger) func(handler http.Handler) http.Handler {
+	rl := requestlog.NewRequestLogger(func(kv map[string]interface{}) {
+		var args []interface{}
+		for k, v := range kv {
+			args = append(args, k)
+			args = append(args, v)
+		}
+		log.Debugw("Request", args...)
+	}).Middleware()
+	return rl
 }
 
 func main() {

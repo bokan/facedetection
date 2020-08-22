@@ -9,7 +9,9 @@ import (
 	"github.com/bokan/facedetection/pkg/facedetect"
 )
 
+// TODO: Send application error codes to the client.
 type Error struct {
+	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 

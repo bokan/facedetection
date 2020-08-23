@@ -10,12 +10,17 @@ import (
 	"github.com/bokan/facedetection/pkg/download"
 )
 
+// HTTPDownloader downloads a file from an HTTP server.
 type HTTPDownloader struct {
 	client        *http.Client
 	clientTimeOut time.Duration
 	maxFileSize   int64
 }
 
+// NewHTTPDownloader instantiates a new HTTPDownloader.
+//
+// Requests will be time bound by clientTimeOut.
+// Files bigger than maxFileSize will be rejected.
 func NewHTTPDownloader(client *http.Client, clientTimeOut time.Duration, maxFileSize int64) *HTTPDownloader {
 	return &HTTPDownloader{clientTimeOut: clientTimeOut, maxFileSize: maxFileSize, client: client}
 }

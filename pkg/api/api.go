@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// API handles Face Detect requests, register routes and creates the HTTP server.
 type API struct {
 	addr string
 	d    download.Downloader

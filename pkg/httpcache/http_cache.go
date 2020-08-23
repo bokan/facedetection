@@ -8,14 +8,17 @@ import (
 	"github.com/bokan/facedetection/pkg/responserecorder"
 )
 
+// HTTPCache caches the successful HTTP responses.
 type HTTPCache struct {
 	store cachestore.CacheStore
 }
 
+// NewHTTPCache instantiates a new HTTPCache with provided cache store.
 func NewHTTPCache(store cachestore.CacheStore) *HTTPCache {
 	return &HTTPCache{store: store}
 }
 
+// Middleware returns a HTTP middleware that performs caching.
 func (c *HTTPCache) Middleware() func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

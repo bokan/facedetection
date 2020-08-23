@@ -15,20 +15,21 @@ import (
 )
 
 const (
-	MinSize                  = 20
-	MaxSize                  = 1000
-	ShiftFactor              = 0.1
-	ScaleFactor              = 1.1
-	Angle                    = 0.0
-	IoUThreshold             = 0.2
-	Perturbs                 = 63
-	FeaturesQualityThreshold = 5.0
+	minSize                  = 20
+	maxSize                  = 1000
+	shiftFactor              = 0.1
+	scaleFactor              = 1.1
+	angle                    = 0.0
+	ioUThreshold             = 0.2
+	perturbs                 = 63
+	featuresQualityThreshold = 5.0
 )
 
 var (
 	mouthCascade = []string{"lp93", "lp84", "lp82", "lp81"}
 )
 
+// PigoFaceDetector is face detector implementation based on pigo.
 type PigoFaceDetector struct {
 	classifier *pigo.Pigo
 	plc        *pigo.PuplocCascade
@@ -104,19 +105,19 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 	}
 
 	cParams := pigo.CascadeParams{
-		MinSize:     MinSize,
-		MaxSize:     MaxSize,
-		ShiftFactor: ShiftFactor,
-		ScaleFactor: ScaleFactor,
+		MinSize:     minSize,
+		MaxSize:     maxSize,
+		ShiftFactor: shiftFactor,
+		ScaleFactor: scaleFactor,
 		ImageParams: *imgParams,
 	}
 
 	// Run the classifier over the obtained leaf nodes and return the detection results.
 	// The result contains quadruplets representing the row, column, scale and detection score.
-	faces := pfd.classifier.RunCascade(cParams, Angle)
+	faces := pfd.classifier.RunCascade(cParams, angle)
 
 	// Calculate the intersection over union (IoU) of two clusters.
-	faces = pfd.classifier.ClusterDetections(faces, IoUThreshold)
+	faces = pfd.classifier.ClusterDetections(faces, ioUThreshold)
 
 	var outFaces []facedetect.Face
 
@@ -132,7 +133,7 @@ func (pfd PigoFaceDetector) DetectFaces(ctx context.Context, img io.Reader) ([]f
 				Width:  face.Scale,
 			},
 		}
-		if face.Q > FeaturesQualityThreshold && face.Scale > 50 {
+		if face.Q > featuresQualityThreshold && face.Scale > 50 {
 			leftEye, rightEye := detectEyes(pfd.plc, face, imgParams)
 			if leftEye != nil {
 				outFace.LeftEye = &facedetect.Point{
@@ -163,31 +164,31 @@ func detectEyes(plc *pigo.PuplocCascade, face pigo.Detection, imgParams *pigo.Im
 		Row:      face.Row - int(0.075*float32(face.Scale)),
 		Col:      face.Col - int(0.175*float32(face.Scale)),
 		Scale:    float32(face.Scale) * 0.25,
-		Perturbs: Perturbs,
+		Perturbs: perturbs,
 	}
-	leftEye := plc.RunDetector(*puploc, *imgParams, Angle, false)
+	leftEye := plc.RunDetector(*puploc, *imgParams, angle, false)
 
 	// Right eye
 	puploc = &pigo.Puploc{
 		Row:      face.Row - int(0.075*float32(face.Scale)),
 		Col:      face.Col + int(0.185*float32(face.Scale)),
 		Scale:    float32(face.Scale) * 0.25,
-		Perturbs: Perturbs,
+		Perturbs: perturbs,
 	}
-	rightEye := plc.RunDetector(*puploc, *imgParams, Angle, false)
+	rightEye := plc.RunDetector(*puploc, *imgParams, angle, false)
 
 	return leftEye, rightEye
 }
 
 func detectMouth(flpcs map[string][]*pigo.FlpCascade, leftEye *pigo.Puploc, rightEye *pigo.Puploc, imgParams *pigo.ImageParams) *facedetect.Point {
-	mouthMinX := MaxSize
+	mouthMinX := maxSize
 	mouthMaxX := 0
-	mouthMinY := MaxSize
+	mouthMinY := maxSize
 	mouthMaxY := 0
 
 	for _, mouth := range mouthCascade {
 		for _, flpc := range flpcs[mouth] {
-			flp := flpc.FindLandmarkPoints(leftEye, rightEye, *imgParams, Perturbs, false)
+			flp := flpc.FindLandmarkPoints(leftEye, rightEye, *imgParams, perturbs, false)
 			if flp.Row > 0 && flp.Col > 0 {
 				if flp.Col > mouthMaxX {
 					mouthMaxX = flp.Col
@@ -205,7 +206,7 @@ func detectMouth(flpcs map[string][]*pigo.FlpCascade, leftEye *pigo.Puploc, righ
 		}
 	}
 
-	if mouthMinX == MaxSize {
+	if mouthMinX == maxSize {
 		return nil
 	}
 	mx := mouthMinX + (mouthMaxX-mouthMinX)/2

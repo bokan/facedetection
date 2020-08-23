@@ -5,6 +5,9 @@ import (
 	"net/http"
 )
 
+// ResponseRecorder records the response of an HTTP request in a buffer.
+//
+// Calls to Header, WriteHeader and Write are passed to original http.ResponseWriter used in constructor.
 type ResponseRecorder struct {
 	w          http.ResponseWriter
 	r          *http.Request

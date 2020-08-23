@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	ExitCodeError = 1
-	MaxFileSize   = 1 << 21 // 2 MiB
+	exitCodeError = 1
+	maxFileSize   = 1 << 21 // 2 MiB
 )
 
 func locateCascades() string {
@@ -53,7 +53,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		return err
 	}
 
-	d := httpdownloader.NewHTTPDownloader(http.DefaultClient, time.Second*5, MaxFileSize)
+	d := httpdownloader.NewHTTPDownloader(http.DefaultClient, time.Second*5, maxFileSize)
 	fd := pigofacedetect.NewPigoFaceDetector()
 	if err := fd.LoadCascades(*cascadesPath); err != nil {
 		log.Errorw("PigoFaceDetector was unable to load cascades, provide cascade dir with -c flag", "dir", *cascadesPath)
@@ -111,7 +111,7 @@ func main() {
 	}()
 
 	if err := run(ctx, os.Args, os.Stdout); err != nil {
-		os.Exit(ExitCodeError)
+		os.Exit(exitCodeError)
 	}
 
 	select {

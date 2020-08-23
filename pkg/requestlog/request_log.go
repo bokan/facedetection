@@ -8,6 +8,7 @@ import (
 )
 
 type RequestLoggerFunc func(kv map[string]interface{})
+
 type RequestLogger struct {
 	lf RequestLoggerFunc
 }
@@ -27,7 +28,7 @@ func (l *RequestLogger) Middleware() func(handler http.Handler) http.Handler {
 			info := make(map[string]interface{})
 			info["ip"] = getIP(r)
 			info["method"] = r.Method
-			info["url"] = r.URL
+			info["url"] = r.URL.String()
 			info["status"] = rr.StatusCode()
 			info["took"] = took.Milliseconds()
 			l.lf(info)

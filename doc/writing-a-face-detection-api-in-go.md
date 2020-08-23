@@ -174,7 +174,7 @@ func (a *API) Serve(ctx context.Context, handler http.Handler) error
 Request handler is the most important part of this package. It should validate user input first and then call downloader 
 and face detector. I suggest that you write it and test it first. 
 
-Make sure handler returns the correct status codes and content types. For example, passing an invalid url or non image url 
+Make sure that handler returns the correct status codes and content types. For example, passing an invalid url or non image url 
 should return the status code 400, indicating the user error. On the other hand, error occurred in one of the 
 components should return the status code 500. When returning JSON, add the `Content-Type` header to indicate that the 
 response contains data of `application/json` MIME type.
@@ -192,7 +192,7 @@ allowAllOrigins := handlers.AllowedOriginValidator(func(origin string) bool {
 headersOk := handlers.AllowedHeaders([]string{})
 methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "OPTIONS"})
 
-return handlers.RecoveryHandler()(handlers.CORS(headersOk, allowAllOrigins, methodsOk)(r))
+return handlers.CORS(headersOk, allowAllOrigins, methodsOk)(r)
 ```
 
 Another important thing that we have to handle inside the `Routes` method are the handler panics. Go http server spawns
@@ -276,7 +276,7 @@ sigc := make(chan os.Signal, 1)
 signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 
 
-// Create a go routine that will cancel the parent context when signal is received.
+// Create a goroutine that will cancel the parent context when signal is received.
 go func() { 
     select {
     case <-sigc:
@@ -301,7 +301,8 @@ case <-time.After(time.Second):
 ## Caching the responses
 
 Now we have a fully working Face Detection API. To improve efficiency, we can cache the successful responses.
-Ideally, we don't want to change any of the existing components. We're going to introduce the cache in the caller (main) as an HTTP middleware.
+Ideally, we don't want to change any of the existing components. That's why we're going to introduce the cache 
+in the caller (main) as an HTTP middleware.
 
 Middleware is a function that receives the original `http.Handler` and returns an `http.Handler` which wraps the original one. This gives
 us opportunity to access the request and response writer before and after the original handler.
@@ -320,11 +321,11 @@ func Middleware() func(handler http.Handler) http.Handler {
 > Example above adds another wrapper that returns the middleware function. This way we can pass arguments to the middleware.
 
 Our simple HTTP cache implementation will look like this. First, we try to serve the saved response.
-In case of the cache miss, we run the original handler and record the response. To achieve this, we need a HTTP response recorder.
+In the case of cache miss, we'll run the original handler and record the response. To achieve this, we need an HTTP response recorder.
 
 `http.ResponseWriter` is an interface that defines `Header`, `WriteHeader` and `Write` methods. `Header` returns the response header that's going
-to be written by `WriteHeader`. `Write` is used to send the body of the response. To record the response, each method in our implementation should pass calls
-to original `http.ResponseWriter` while recording the parts of the response. `WriteHeader` is going to save the response header and the status code.
+to be written by `WriteHeader`. `Write` is used to send the response body. To record the response, each method in our implementation should pass calls
+to the original `http.ResponseWriter` while recording the parts of the response. `WriteHeader` is going to save a response header and a status code.
 `Write` is going to save a response body to a buffer.
 
 To keep things simple, our cache won't adhere to the [RFC7234](https://tools.ietf.org/html/rfc7234). Cached items won't expire and we
@@ -354,17 +355,17 @@ replace this implementation with one backed by redis or something similar. Nice 
 - Make sure you ship the cascades directory with the binary as _pigo_ relies on these. My implementation, by default,
  tries to find the path automatically. You can override it using the `-c` flag. Embedding 
  the cascades into a binary with [packr](https://github.com/gobuffalo/packr) is also an option.
-- Detection will not work on images where people lean to the side, because _pigo_ detects only faces that are perpendicular to the ground (X axis). 
+- Detection will not work on images where people lean to the side because _pigo_ detects only faces that are perpendicular to the ground (X axis). 
 You could tweak the angle settings if you need to perform detection on images shot at other angles.   
-- _pigo_ sometimes makes two detections on the same face. Overlap detection and removal would be a nice to have at one point.
+- _pigo_ sometimes makes two detections on the same face. Overlap detection and removal would be nice to have at one point.
 - Keep in mind that my implementation of the API omits the facial features it's unable to detect.
  
 ## Wrapping Up
 
-This post covers basic requirements for a Go service running in production. It mainly focuses on design, stability and resilience.
+This post covers basic requirements for a Go image analysis service running in production. It mainly focuses on design, stability and resilience.
 However, there's a lot of room for improvement. Next step would be instrumenting your application.
 This includes logging events, requests and errors, and collecting metrics. 
 Provided insights will help you operate the service confidently and reliably. 
 
-You can browse my implementation [here](https://github.com/bokan/facedetection). Web UI for testing is [here](https://facedetect.bokan.io/).
+You can browse my implementation [here](https://github.com/bokan/facedetection). Web UI for testing is available [here](https://facedetect.bokan.io/).
 

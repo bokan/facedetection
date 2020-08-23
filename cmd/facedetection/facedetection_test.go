@@ -64,3 +64,9 @@ func Test_requestLogger(t *testing.T) {
 	r := httptest.NewRequest(http.MethodGet, "/foo", nil)
 	rl(handler).ServeHTTP(rec, r)
 }
+
+func Test_locateCascades(t *testing.T) {
+	if locateCascades() == "" {
+		t.Error("locateCascades() should return a path")
+	}
+}

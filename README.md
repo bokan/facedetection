@@ -1,6 +1,7 @@
 # Face Detection API in Go
 
 ![build](https://github.com/bokan/facedetection/workflows/build/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bokan/facedetection)](https://goreportcard.com/report/github.com/bokan/facedetection)
 
 ## Quick start:
 

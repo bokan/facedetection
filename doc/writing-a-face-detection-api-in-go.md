@@ -8,7 +8,7 @@ tags: [face-detection,golang,go,api]
 # Writing a Face Detection API in Go
 
 Let's write a Face Detection API in Go. Interface should be simple, an HTTP API that accepts an image URL. Output should
-be a list of detected faces, including face boundaries, positions of eyes and mouth.
+be a list of detected faces, including the face boundaries and positions of eyes and mouth.
 
 Our objective is to create a production ready service in a short time frame.
 
@@ -27,11 +27,11 @@ To be as efficient as possible, we're going to write each component, test it ind
  
 ## Setting up the project
 
-Adding the [golangci-lint](https://github.com/golangci/golangci-lint) is the first thing I do on a new project. Here are my usual settings for it:
+Adding the [golangci-lint](https://github.com/golangci/golangci-lint) is the first thing I do on a new project. Here are my usual settings:
 ```
 golangci-lint run -E golint -E gofmt -E govet -E goimports -E gocyclo -E gocognit -E ineffassign -E misspell
 ```
-I like to create a Makefile entry for it so that I can easily run it with `make lint`. I'd highly suggest that you set up a trigger that runs _golangci-lint_ on file save, if you're IDE/Editor supports it. 
+I like to create a Makefile entry so that I can easily run it with `make lint`. I'd highly suggest that you set up a trigger that runs _golangci-lint_ on file save, if you're IDE/Editor supports it. 
 
 Our service components are going to live in `pkg` folder. One package per component. Interfaces get their own package to keep the dependencies as lean as possible.
 ```
@@ -64,8 +64,8 @@ type FaceDetector interface {
 }
 ```
 
-Context is always nice to have, we'll include it for the future use. 
-For receiving images `io.Reader` will do. This way we can pass the HTTP response body from the Downloader directly without having to buffer the image first.
+Context is always nice to have, we'll include it for future use. 
+For receiving images `io.Reader` will do. This way we can pass the HTTP response body from downloader to face detector directly without having to buffer the image first.
 
 For the response, we can use the following structs:
 ```go
@@ -89,8 +89,8 @@ type Face struct {
 }
 ```
 
-To speed things up, we're going to copy the content of [pigo cli](https://github.com/esimov/pigo/blob/master/cmd/pigo/main.go) into our implementation and modify the code a bit to adhere our `FaceDetector` interface.
-We also need to copy cascade files required by _pigo_ to our project. 
+To speed things up, we're going to copy the content of [pigo cli](https://github.com/esimov/pigo/blob/master/cmd/pigo/main.go) into our implementation and modify the code a bit to adhere `FaceDetector` interface.
+We also need to copy cascade files required by _pigo_. 
 
 Keep in mind that _pigo_ relies on `image` package. To enable the JPEG and PNG support you should add the following imports:
 ```go
@@ -105,7 +105,7 @@ You can use image editor of your choice to verify that face boundaries and facia
 
 ## Image downloader
 
-Downloader initiates the HTTP GET request and checks that file is not too big. It returns body of the response as `io.ReadCloser`. 
+Downloader initiates the HTTP GET request and checks that file is not too big. It returns response body as `io.ReadCloser`. 
 
 ```go
 type Downloader interface {
@@ -208,7 +208,8 @@ Finally, `Serve` creates an HTTP server. We could do this outside of api package
 
 To make our service production ready, we need to set up some timeouts for the web server. 
 I suggest that you read "[The complete guide to Go net/http timeouts](https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts)" 
-and "[So you want to expose Go on the Internet](https://blog.cloudflare.com/exposing-go-on-the-internet/)" articles on CloudFlare blog.
+and "[So you want to expose Go on the Internet](https://blog.cloudflare.com/exposing-go-on-the-internet/)" articles on CloudFlare blog. Having
+a load balancer in front of your service will prevent clients from keeping the connections open, but you should set timeouts on your service as well.
 Reducing the maximum size of request headers is also a good idea. Default value is 1 MiB. For our service, 1 KiB will do.
 
 Go http server creates a new context for each request. By default, it uses `context.Background` as a parent context. We want to override this as well,
@@ -229,7 +230,7 @@ srv := http.Server{
 }
 ```
 
-Note that `Serve` could call `Routes` directly, but we want to leave it to the caller. This way the middleware can be easily introduced later.
+Note that `Serve` could call `Routes` directly, but we'll leave it to the caller. This way we can easily introduce middleware later.
 For example, caller could add rate limiter, cache or access log middleware without modifying the HTTP API component. It's also easier to test.
 
 ```go
@@ -299,7 +300,7 @@ case <-time.After(time.Second):
 
 ## Caching the responses
 
-Now we have a fully working Face Detection API. To boost the efficiency, we can cache the successful responses.
+Now we have a fully working Face Detection API. To improve efficiency, we can cache the successful responses.
 Ideally, we don't want to change any of the existing components. We're going to introduce the cache in the caller (main) as an HTTP middleware.
 
 Middleware is a function that receives the original `http.Handler` and returns an `http.Handler` which wraps the original one. This gives
@@ -309,9 +310,9 @@ us opportunity to access the request and response writer before and after the or
 func Middleware() func(handler http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            // Before the original handler.
-            handler.ServeHTTP(rr, r)
-            // After the original handler.
+           // Before the original handler.
+           handler.ServeHTTP(rr, r)
+           // After the original handler.
 		})
 	}
 }
@@ -319,7 +320,7 @@ func Middleware() func(handler http.Handler) http.Handler {
 > Example above adds another wrapper that returns the middleware function. This way we can pass arguments to the middleware.
 
 Our simple HTTP cache implementation will look like this. First, we try to serve the saved response.
-In case of the cache miss, we run the original handler and record the response. To achieve this, we need the HTTP response recorder.
+In case of the cache miss, we run the original handler and record the response. To achieve this, we need a HTTP response recorder.
 
 `http.ResponseWriter` is an interface that defines `Header`, `WriteHeader` and `Write` methods. `Header` returns the response header that's going
 to be written by `WriteHeader`. `Write` is used to send the body of the response. To record the response, each method in our implementation should pass calls
@@ -351,9 +352,8 @@ replace this implementation with one backed by redis or something similar. Nice 
 ## Gotchas 
 
 - Make sure you ship the cascades directory with the binary as _pigo_ relies on these. My implementation, by default,
- expects files to be in `pkg/facedetect/pigofacedetect/cascades`. Note that this is a relative path. This means that
- **you need to run the service from the repository root**. You can override this path using the `-c` flag. Embedding 
- the cascades into a binary with [packr](https://github.com/gobuffalo/packr) would solve this issue.
+ tries to find the path automatically. You can override it using the `-c` flag. Embedding 
+ the cascades into a binary with [packr](https://github.com/gobuffalo/packr) is also an option.
 - Detection will not work on images where people lean to the side, because _pigo_ detects only faces that are perpendicular to the ground (X axis). 
 You could tweak the angle settings if you need to perform detection on images shot at other angles.   
 - _pigo_ sometimes makes two detections on the same face. Overlap detection and removal would be a nice to have at one point.
@@ -366,5 +366,5 @@ However, there's a lot of room for improvement. Next step would be instrumenting
 This includes logging events, requests and errors, and collecting metrics. 
 Provided insights will help you operate the service confidently and reliably. 
 
-You can browse my code [here](#). Try the live demo [here](https://facedetect.bokan.io/).
+You can browse my implementation [here](https://github.com/bokan/facedetection). Web UI for testing is [here](https://facedetect.bokan.io/).
 

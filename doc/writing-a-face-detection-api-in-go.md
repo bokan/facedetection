@@ -1,7 +1,7 @@
 ---
 title: "Writing a Face Detection API in Go"
 author: Boris Bokan
-date: 2020-08-22T16:38:06+38:00
+date: 2020-08-23T16:00:00+02:00
 tags: [face-detection,golang,go,api]
 ---
 
@@ -164,7 +164,7 @@ Now is a good time to test our Downloader implementation in isolation.
 
 ## HTTP API
 
-HTTP API should register routes, create an HTTP server and handle requests. 
+HTTP API should handle requests, register routes and create an HTTP server. 
 ```go
 func (a *API) handleFaceDetect(w http.ResponseWriter, r *http.Request)
 func (a *API) Routes() http.Handler
@@ -196,8 +196,8 @@ return handlers.RecoveryHandler()(handlers.CORS(headersOk, allowAllOrigins, meth
 ```
 
 Another important thing that we have to handle inside the `Routes` method are the handler panics. Go http server spawns
-a goroutine per request. This means that every request has to recover from eventual panics. Although `http.Server` is smart
-enough to recover from panics, we could use `handlers.RecoveryHandler` from `gorilla/handlers` with custom logger to log 
+a goroutine per request. This means that every request has to recover from eventual panics. Although `http.Server` recovers
+from panics, we could use `handlers.RecoveryHandler` from `gorilla/handlers` with custom logger to log 
 the panic and trigger an alarm. 
 
 ```go
@@ -212,7 +212,7 @@ and "[So you want to expose Go on the Internet](https://blog.cloudflare.com/expo
 Reducing the maximum size of request headers is also a good idea. Default value is 1 MiB. For our service, 1 KiB will do.
 
 Go http server creates a new context for each request. By default, it uses `context.Background` as a parent context. We want to override this as well,
-so the caller can set the parent context. This way we can gracefully stop all the requests when parent receives an interrupt signal.
+so the caller can set the parent context. This way we can gracefully stop all requests when parent receives an interrupt signal.
 
 ```go
 srv := http.Server{
@@ -236,7 +236,8 @@ For example, caller could add rate limiter, cache or access log middleware witho
 a.Serve(ctx, middleware(a.Routes()))
 ```
 
-Mentioning the tests, it's time to introduce our first integration test. Use `httptest.NewServer` to create a test server and pass the return of `Routes` as parameter.
+Mentioning the tests, it's time to introduce our first integration test. Use `httptest.NewServer` to create a test server. It expects 
+ `http.Handler` as a parameter. Pass the return of `Routes`.
 Test server exposes the URL field. Use it as a base URL for your test requests.
 
 ```go
@@ -245,11 +246,10 @@ url := fmt.Sprintf("%s/v1/face-detect?image_url=%s", testSrv.URL, imgURL)
 
 ## Putting it all together
 
-As the integration testing went well, it's time now to create a main function. We can put it in `cmd/facedetection/facedetection.go`.
+Now is the time to create a main function. We can put it in `cmd/facedetection/facedetection.go`.
 
 Our goal here is to instantiate our face detector and downloader implementations, and start the api.
 The most basic version of main would look like this:
-
 
 ```go
 func main() {
@@ -258,7 +258,6 @@ func main() {
     _ := a.Serve(ctx, a.Routes())
 }
 ```
-
 > Constructor params may vary depending on your implementations.
 
 Now imagine that we want to introduce a cache middleware that writes the state to disk. Stopping the service could potentially cause data corruption.
@@ -298,25 +297,74 @@ case <-time.After(time.Second):
 }
 ```
 
+## Caching the responses
+
+Now we have a fully working Face Detection API. To boost the efficiency, we can cache the successful responses.
+Ideally, we don't want to change any of the existing components. We're going to introduce the cache in the caller (main) as an HTTP middleware.
+
+Middleware is a function that receives the original `http.Handler` and returns an `http.Handler` which wraps the original one. This gives
+us opportunity to access the request and response writer before and after the original handler.
+ 
+```go
+func Middleware() func(handler http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            // Before the original handler.
+            handler.ServeHTTP(rr, r)
+            // After the original handler.
+		})
+	}
+}
+```
+> Example above adds another wrapper that returns the middleware function. This way we can pass arguments to the middleware.
+
+Our simple HTTP cache implementation will look like this. First, we try to serve the saved response.
+In case of the cache miss, we run the original handler and record the response. To achieve this, we need the HTTP response recorder.
+
+`http.ResponseWriter` is an interface that defines `Header`, `WriteHeader` and `Write` methods. `Header` returns the response header that's going
+to be written by `WriteHeader`. `Write` is used to send the body of the response. To record the response, each method in our implementation should pass calls
+to original `http.ResponseWriter` while recording the parts of the response. `WriteHeader` is going to save the response header and the status code.
+`Write` is going to save a response body to a buffer.
+
+To keep things simple, our cache won't adhere to the [RFC7234](https://tools.ietf.org/html/rfc7234). Cached items won't expire and we
+won't consider the cache headers. We also won't limit the maximum size of the cache.
+
+After recording the response, we want to persist it to a store that allows querying as well. We also want to make these stores pluggable.
+Let's introduce another interface for the store.
+
+```go
+type Response struct {
+	StatusCode int
+	Header     http.Header
+	Body       []byte
+}
+
+type CacheStore interface {
+	Save(key string, response *Response) error
+	Load(key string) (*Response, error)
+}
+```
+
+You can start with simple in-memory hash map based implementation. Later, if you want to scale out your service you can
+replace this implementation with one backed by redis or something similar. Nice thing about using redis is that you get TTL out of box.
 
 ## Gotchas 
 
 - Make sure you ship the cascades directory with the binary as _pigo_ relies on these. My implementation, by default,
  expects files to be in `pkg/facedetect/pigofacedetect/cascades`. Note that this is a relative path. This means that
- you need to run the service from the repository root. You can override this path using the `-c` flag. Embedding 
+ **you need to run the service from the repository root**. You can override this path using the `-c` flag. Embedding 
  the cascades into a binary with [packr](https://github.com/gobuffalo/packr) would solve this issue.
-- Detection will not work on images where people lean to the side, because _pigo_ detects only faces that are perpendicular to the ground (X axis). You could tweak the angle settings if you need to perform detection on images shot at other angles.   
+- Detection will not work on images where people lean to the side, because _pigo_ detects only faces that are perpendicular to the ground (X axis). 
+You could tweak the angle settings if you need to perform detection on images shot at other angles.   
 - _pigo_ sometimes makes two detections on the same face. Overlap detection and removal would be a nice to have at one point.
 - Keep in mind that my implementation of the API omits the facial features it's unable to detect.
  
+## Wrapping Up
 
-## Conclusion
-
-This post covers basic requirements for a Go service running in production. It mainly focuses on stability and resilience.
+This post covers basic requirements for a Go service running in production. It mainly focuses on design, stability and resilience.
 However, there's a lot of room for improvement. Next step would be instrumenting your application.
 This includes logging events, requests and errors, and collecting metrics. 
 Provided insights will help you operate the service confidently and reliably. 
 
-You can browse my code [here](https://github.com/bokan/facedetection). Try the live demo [here](https://facedetect.bokan.io/).
-
+You can browse my code [here](#). Try the live demo [here](https://facedetect.bokan.io/).
 

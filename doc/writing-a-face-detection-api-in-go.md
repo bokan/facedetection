@@ -301,7 +301,7 @@ case <-time.After(time.Second):
 ## Caching the responses
 
 Now we have a fully working Face Detection API. To improve efficiency, we can cache the successful responses.
-Ideally, we don't want to change any of the existing components. That's why we're going to introduce the cache 
+Ideally, we don't want to change any of the existing components.That's why we're going to introduce the cache 
 in the caller (main) as an HTTP middleware.
 
 Middleware is a function that receives the original `http.Handler` and returns an `http.Handler` which wraps the original one. This gives
@@ -320,7 +320,7 @@ func Middleware() func(handler http.Handler) http.Handler {
 ```
 > Example above adds another wrapper that returns the middleware function. This way we can pass arguments to the middleware.
 
-Our simple HTTP cache implementation will look like this. First, we try to serve the saved response.
+Our simple HTTP cache implementation will look like this. First, we'll try to serve the saved response.
 In the case of cache miss, we'll run the original handler and record the response. To achieve this, we need an HTTP response recorder.
 
 `http.ResponseWriter` is an interface that defines `Header`, `WriteHeader` and `Write` methods. `Header` returns the response header that's going

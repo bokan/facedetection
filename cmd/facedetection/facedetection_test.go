@@ -5,6 +5,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 )
@@ -66,7 +67,22 @@ func Test_requestLogger(t *testing.T) {
 }
 
 func Test_locateCascades(t *testing.T) {
-	if locateCascades() == "" {
+	path, err := goPath(os.Getenv("GOPATH"))
+	if err != nil {
+		t.Errorf("unable to find GOPATH: %v", err)
+		return
+	}
+	if locateCascades(path) == "" {
 		t.Error("locateCascades() should return a path")
 	}
+}
+
+func Test_goPath(t *testing.T) {
+	path, err := goPath("")
+	if err != nil {
+		t.Errorf("unable to find GOPATH: %v", err)
+		return
+	}
+	// TODO: Find a better way to test this.
+	_ = path
 }

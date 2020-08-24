@@ -28,8 +28,7 @@ const (
 	maxFileSize   = 1 << 21 // 2 MiB
 )
 
-func locateCascades() string {
-	goPath := os.Getenv("GOPATH")
+func locateCascades(goPath string) string {
 	paths := strings.Split(goPath, ":")
 	for _, path := range paths {
 		tryPath := filepath.Join(path, "src/github.com/bokan/facedetection/pkg/facedetect/pigofacedetect/cascades")
@@ -40,13 +39,29 @@ func locateCascades() string {
 	return ""
 }
 
+func goPath(envGoPath string) (string, error) {
+	goPath := envGoPath
+	if goPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		goPath = filepath.Join(home, "go")
+	}
+	return goPath, nil
+}
+
 func run(ctx context.Context, args []string, output io.Writer) error {
 	log := initLogger(output)
 
+	goPath, err := goPath(os.Getenv("GOPATH"))
+	if err != nil {
+		return err
+	}
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	var (
 		port         = flags.Int("p", 8000, "configure listen port")
-		cascadesPath = flags.String("c", locateCascades(), "configure cascades path")
+		cascadesPath = flags.String("c", locateCascades(goPath), "configure cascades path")
 	)
 	flags.SetOutput(output)
 	if err := flags.Parse(args[1:]); err != nil {
